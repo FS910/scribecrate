@@ -30,7 +30,7 @@ Also available as part of the [Self-Hosted AI Stack](https://github.com/hwdsl2/s
 **Also available:**
 
 - Try it online: [Open in Colab](https://selfhostedaistack.com/scribecrate-notebook) — no Docker or installation required
-- Related AI services: [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live), [SpeakCrate](https://github.com/hwdsl2/speakcrate), [EmbedCrate](https://github.com/hwdsl2/embedcrate), [GatewayCrate](https://github.com/hwdsl2/gatewaycrate), [InferCrate](https://github.com/hwdsl2/infercrate), [ParseCrate](https://github.com/hwdsl2/parsecrate), [ToolUplink](https://github.com/hwdsl2/tooluplink)
+- Related AI services: [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live), [SpeakCrate](https://github.com/hwdsl2/speakcrate), [EmbedCrate](https://github.com/hwdsl2/embedcrate), [GatewayCrate](https://github.com/hwdsl2/gatewaycrate), [InferCrate](https://github.com/hwdsl2/infercrate), [ParseCrate](https://github.com/hwdsl2/parsecrate), [UplinkCrate](https://github.com/hwdsl2/uplinkcrate)
 
 ## Quick start
 
@@ -687,7 +687,7 @@ Your downloaded models are preserved in the `whisper-data` volume.
 
 ScribeCrate can be used as the speech-to-text service in a broader self-hosted AI setup.
 
-For full and lightweight Docker Compose stacks, manual `docker run` examples, and voice/RAG/MCP pipeline examples with SpeakCrate, EmbedCrate, GatewayCrate, InferCrate, ParseCrate, and ToolUplink, see [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack).
+For full and lightweight Docker Compose stacks, manual `docker run` examples, and voice/RAG/MCP pipeline examples with SpeakCrate, EmbedCrate, GatewayCrate, InferCrate, ParseCrate, and UplinkCrate, see [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack).
 
 ## Speaker diarization
 
