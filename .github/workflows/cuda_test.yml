@@ -13,6 +13,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Unit tests
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .github/workflows/tests
       - name: Test CUDA image boot without GPU
         run: |
           [ ! -x /usr/bin/docker ] && exit 1
@@ -37,6 +39,8 @@ jobs:
             -e WHISPER_MODEL=tiny \
             -e WHISPER_DEVICE=cpu \
             -e WHISPER_API_KEY=test-whisper-cuda-key \
+            -e WHISPER_CONDITION_ON_PREVIOUS_TEXT=false \
+            -e WHISPER_NO_REPEAT_NGRAM_SIZE=3 \
             -p 9000:9000/tcp \
             -d whisper-cuda-test
 
@@ -55,6 +59,7 @@ jobs:
 
           # Verify the CUDA image can boot on a non-GPU runner in explicit CPU mode.
           docker logs whisper-cuda-runtime-test 2>&1 | grep -Eq 'Device:[[:space:]]+cpu'
+          docker logs whisper-cuda-runtime-test 2>&1 | grep -q 'condition_on_previous_text=False no_repeat_ngram_size=3'
 
           # Verify health, auth enforcement, and the OpenAI-compatible models endpoint.
           docker exec whisper-cuda-runtime-test curl -sf http://127.0.0.1:9000/health
@@ -70,6 +75,9 @@ jobs:
           docker exec whisper-cuda-runtime-test whisper_manage --showinfo
           docker exec whisper-cuda-runtime-test whisper_manage --listmodels
           docker exec whisper-cuda-runtime-test python3 -c 'import faster_whisper; print("faster-whisper import ok")'
+          # This verifies argument compatibility on CPU, not GPU inference.
+          docker exec whisper-cuda-runtime-test python3 -c \
+            'import inspect; from faster_whisper import WhisperModel; p = inspect.signature(WhisperModel.transcribe).parameters; assert {"condition_on_previous_text", "no_repeat_ngram_size"} <= p.keys()'
 
           exit 0
       - name: Clear

@@ -2,6 +2,14 @@ name: test
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'api_server.py'
+      - 'diarizer.py'
+      - 'run.sh'
+      - 'Dockerfile*'
+      - 'whisper.env.example'
   push:
     branches: [main]
     paths:
@@ -10,6 +18,11 @@ on:
       - '.github/workflows/whisper_test.yml'
       - '.github/workflows/cuda_test.yml'
       - '.github/workflows/tests/**'
+      - 'api_server.py'
+      - 'diarizer.py'
+      - 'run.sh'
+      - 'Dockerfile*'
+      - 'whisper.env.example'
 
 permissions:
   contents: read

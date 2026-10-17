@@ -9,6 +9,7 @@ on:
       - '.github/workflows/buildx-cuda.yml'
       - '.dockerignore'
       - 'api_server.py'
+      - 'diarizer.py'
       - 'Dockerfile'
       - 'Dockerfile.cuda'
       - 'manage.sh'
