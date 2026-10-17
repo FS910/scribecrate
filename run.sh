@@ -43,6 +43,43 @@ fetch_public_ip() {
   return 1
 }
 
+# Strict parsing is limited to the new decoding options. Keep the existing
+# nospaces/noquotes behavior unchanged for all legacy settings.
+normalize_decoding_option() {
+  local value="$1" whitespace=$' \t\r\n\v\f'
+  value="${value#"${value%%[!"$whitespace"]*}"}"
+  value="${value%"${value##*[!"$whitespace"]}"}"
+  if [[ ${#value} -ge 2 && ( "$value" == \"*\" || "$value" == \'*\' ) ]]; then
+    value="${value:1:${#value}-2}"
+    value="${value#"${value%%[!"$whitespace"]*}"}"
+    value="${value%"${value##*[!"$whitespace"]}"}"
+  fi
+  printf '%s' "$value"
+}
+
+configure_decoding_options() {
+  local condition ngram LC_ALL=C
+  condition=$(normalize_decoding_option "${WHISPER_CONDITION_ON_PREVIOUS_TEXT:-}")
+  condition=$(printf '%s' "$condition" | LC_ALL=C tr '[:upper:]' '[:lower:]')
+  case "$condition" in
+    '') condition=true ;;
+    true|false) ;;
+    *) exiterr "WHISPER_CONDITION_ON_PREVIOUS_TEXT must be true or false." ;;
+  esac
+  ngram=$(normalize_decoding_option "${WHISPER_NO_REPEAT_NGRAM_SIZE:-}")
+  [ -n "$ngram" ] || ngram=0
+  # Bash's full-string regex and length-first decimal comparison avoid
+  # accepting extra lines, locale-dependent digits, or integer overflow.
+  # shellcheck disable=SC2071
+  if [[ ! "$ngram" =~ ^(0|[1-9][0-9]*)$ ]] || [ "${#ngram}" -gt 10 ] \
+    || { [ "${#ngram}" -eq 10 ] && [[ "$ngram" > 2147483647 ]]; }; then
+    exiterr "WHISPER_NO_REPEAT_NGRAM_SIZE must be an integer from 0 to 2147483647 without signs or leading zeros."
+  fi
+  export WHISPER_CONDITION_ON_PREVIOUS_TEXT="$condition"
+  export WHISPER_NO_REPEAT_NGRAM_SIZE="$ngram"
+}
+# End strict decoding option helpers.
+
 # Source bind-mounted env file if present (takes precedence over --env-file)
 if [ -f /whisper.env ]; then
   # shellcheck disable=SC1091
@@ -181,6 +218,8 @@ fi
 if ! printf '%s' "$WHISPER_DIARIZE_THRESHOLD" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
   exiterr "WHISPER_DIARIZE_THRESHOLD must be a non-negative number (e.g. 0.5)."
 fi
+
+configure_decoding_options
 
 mkdir -p /var/lib/whisper
 # Create the dedicated temp directory for audio uploads.
