@@ -1,10 +1,10 @@
-[English](README.md) | [简体中文](README-zh.md) | [繁體中文](README-zh-Hant.md) | [Русский](README-ru.md)
+[English](../README.md) | [简体中文](README-zh.md) | [繁體中文](README-zh-Hant.md) | [Русский](README-ru.md)
 
 # ScribeCrate
 
 **开源、自托管的音频转录 API。**
 
-[![构建状态](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml/badge.svg)](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml) &nbsp;[![Docker Pulls](https://raw.githubusercontent.com/hwdsl2/badges/main/img/docker-pulls-whisper-server.svg)](https://hub.docker.com/r/hwdsl2/whisper-server) &nbsp;[![License: MIT](docs/images/license.svg)](https://opensource.org/licenses/MIT) &nbsp;[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://selfhostedaistack.com/scribecrate-notebook)
+[![构建状态](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml/badge.svg)](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml) &nbsp;[![Docker Pulls](https://raw.githubusercontent.com/hwdsl2/badges/main/img/docker-pulls-whisper-server.svg)](https://hub.docker.com/r/hwdsl2/whisper-server) &nbsp;[![License: MIT](images/license.svg)](https://opensource.org/licenses/MIT) &nbsp;[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://selfhostedaistack.com/scribecrate-notebook)
 
 ScribeCrate 是一个自托管的语音转文字 API，用于转录音频、生成字幕，并将语音翻译为英语。它使用 [Whisper](https://github.com/openai/whisper) 模型，由 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 驱动，提供兼容 OpenAI 的转录和翻译接口。可通过 Docker 部署，使用 CPU 或 NVIDIA GPU 运行。
 
@@ -23,14 +23,14 @@ ScribeCrate 是一个自托管的语音转文字 API，用于转录音频、生�
 - **离线运行：** 使用预先缓存的模型和 `WHISPER_LOCAL_ONLY`，无需访问互联网即可运行。
 - **自动构建：** 镜像通过 [GitHub Actions](https://github.com/hwdsl2/scribecrate/actions) 自动构建和发布，构建工作流公开可查。
 
-也可作为 [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/README-zh.md) 的一部分使用，一条命令即可部署完整的自托管 AI 技术栈。
+也可作为 [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/docs/README-zh.md) 的一部分使用，一条命令即可部署完整的自托管 AI 技术栈。
 
 > 📘 [The Self-Hosted AI Builder’s Guide](https://books2read.com/aiguide?store=amazon) 是一本关于构建、保护和运维自己的私有 AI 技术栈的实用指南。
 
 **另提供：**
 
 - 在线试用：[在 Colab 中打开](https://selfhostedaistack.com/scribecrate-notebook)——无需 Docker 或安装
-- 相关 AI 服务：[ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/README-zh.md)、[SpeakCrate](https://github.com/hwdsl2/speakcrate/blob/main/README-zh.md)、[EmbedCrate](https://github.com/hwdsl2/embedcrate/blob/main/README-zh.md)、[GatewayCrate](https://github.com/hwdsl2/gatewaycrate/blob/main/README-zh.md)、[InferCrate](https://github.com/hwdsl2/infercrate/blob/main/README-zh.md)、[ParseCrate](https://github.com/hwdsl2/parsecrate/blob/main/README-zh.md)、[UplinkCrate](https://github.com/hwdsl2/uplinkcrate/blob/main/README-zh.md)
+- 相关 AI 服务：[ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/docs/README-zh.md)、[SpeakCrate](https://github.com/hwdsl2/speakcrate/blob/main/docs/README-zh.md)、[EmbedCrate](https://github.com/hwdsl2/embedcrate/blob/main/docs/README-zh.md)、[GatewayCrate](https://github.com/hwdsl2/gatewaycrate/blob/main/docs/README-zh.md)、[InferCrate](https://github.com/hwdsl2/infercrate/blob/main/docs/README-zh.md)、[ParseCrate](https://github.com/hwdsl2/parsecrate/blob/main/docs/README-zh.md)、[UplinkCrate](https://github.com/hwdsl2/uplinkcrate/blob/main/docs/README-zh.md)
 
 ## 快速开始
 
@@ -107,13 +107,13 @@ curl http://您的服务器IP:9000/v1/audio/transcriptions \
     -F model=whisper-1
 ```
 
-另外，你也可以在不使用 Docker 的情况下[安装 Whisper](https://github.com/hwdsl2/whisper-install/blob/main/README-zh.md)。如需了解更多关于此镜像的使用方法，请阅读以下各节。
+另外，你也可以在不使用 Docker 的情况下[安装 Whisper](https://github.com/hwdsl2/whisper-install/blob/main/docs/README-zh.md)。如需了解更多关于此镜像的使用方法，请阅读以下各节。
 
 ## ScribeCrate 与 ScribeCrate Live 的选择
 
 ScribeCrate Live 是独立部署的服务器，由 [WhisperLive](https://github.com/collabora/WhisperLive) 提供支持。
 
-| | **ScribeCrate** | [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/README-zh.md) |
+| | **ScribeCrate** | [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/docs/README-zh.md) |
 |---|---|---|
 | **使用场景** | 转录完整音频文件 | 实时麦克风/音频流 |
 | **协议** | HTTP REST | WebSocket（流式）+ HTTP REST |
@@ -132,9 +132,9 @@ ScribeCrate Live 是独立部署的服务器，由 [WhisperLive](https://github.
 
 - [Setup IPsec VPN](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/README-zh.md)
 - [Docker 上的 IPsec VPN](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README-zh.md)
-- [WireGuard](https://github.com/hwdsl2/docker-wireguard/blob/main/README-zh.md)
-- [OpenVPN](https://github.com/hwdsl2/docker-openvpn/blob/main/README-zh.md)
-- [Headscale](https://github.com/hwdsl2/docker-headscale/blob/main/README-zh.md)
+- [WireGuard](https://github.com/hwdsl2/docker-wireguard/blob/main/docs/README-zh.md)
+- [OpenVPN](https://github.com/hwdsl2/docker-openvpn/blob/main/docs/README-zh.md)
+- [Headscale](https://github.com/hwdsl2/docker-headscale/blob/main/docs/README-zh.md)
 
 </details>
 
@@ -181,7 +181,7 @@ CPU 镜像支持 `linux/amd64` 和 `linux/arm64`。`:cuda` 标签仅支持 `linu
 
 所有变量均为可选。挂载 `/var/lib/whisper` 数据卷的新安装会自动生成 Bearer 令牌。没有密钥的既有安装会保持开放以兼容旧行为。
 
-此 Docker 镜像使用以下变量，可在 `env` 文件中声明（参见[示例](whisper.env.example)）：
+此 Docker 镜像使用以下变量，可在 `env` 文件中声明（参见[示例](../whisper.env.example)）：
 
 | 变量 | 说明 | 默认值 |
 |---|---|---|
@@ -687,7 +687,7 @@ docker rm -f whisper
 
 ScribeCrate 可作为更广泛的自托管 AI 设置中的语音转文字服务。
 
-如需完整和轻量级 Docker Compose 技术栈、手动 `docker run` 示例，以及结合 SpeakCrate、EmbedCrate、GatewayCrate、InferCrate、ParseCrate 和 UplinkCrate 的语音/RAG/MCP 流水线示例，请参阅 [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/README-zh.md)。
+如需完整和轻量级 Docker Compose 技术栈、手动 `docker run` 示例，以及结合 SpeakCrate、EmbedCrate、GatewayCrate、InferCrate、ParseCrate 和 UplinkCrate 的语音/RAG/MCP 流水线示例，请参阅 [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/docs/README-zh.md)。
 
 ## 说话人分离
 

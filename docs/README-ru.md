@@ -1,10 +1,10 @@
-[English](README.md) | [简体中文](README-zh.md) | [繁體中文](README-zh-Hant.md) | [Русский](README-ru.md)
+[English](../README.md) | [简体中文](README-zh.md) | [繁體中文](README-zh-Hant.md) | [Русский](README-ru.md)
 
 # ScribeCrate
 
 **API для транскрибации на собственном сервере с открытым исходным кодом.**
 
-[![Статус сборки](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml/badge.svg)](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml) &nbsp;[![Docker Pulls](https://raw.githubusercontent.com/hwdsl2/badges/main/img/docker-pulls-whisper-server.svg)](https://hub.docker.com/r/hwdsl2/whisper-server) &nbsp;[![License: MIT](docs/images/license.svg)](https://opensource.org/licenses/MIT) &nbsp;[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://selfhostedaistack.com/scribecrate-notebook)
+[![Статус сборки](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml/badge.svg)](https://github.com/hwdsl2/scribecrate/actions/workflows/main.yml) &nbsp;[![Docker Pulls](https://raw.githubusercontent.com/hwdsl2/badges/main/img/docker-pulls-whisper-server.svg)](https://hub.docker.com/r/hwdsl2/whisper-server) &nbsp;[![License: MIT](images/license.svg)](https://opensource.org/licenses/MIT) &nbsp;[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://selfhostedaistack.com/scribecrate-notebook)
 
 ScribeCrate предоставляет API для преобразования речи в текст на собственном сервере, позволяющий транскрибировать аудио, создавать субтитры и переводить речь на английский язык. Сервер предоставляет совместимые с OpenAI конечные точки транскрибации и перевода, используя модели [Whisper](https://github.com/openai/whisper) и движок [faster-whisper](https://github.com/SYSTRAN/faster-whisper). Разверните сервер с помощью Docker на CPU или NVIDIA GPU.
 
@@ -23,14 +23,14 @@ ScribeCrate предоставляет API для преобразования �
 - **Автономная работа:** запуск без доступа к интернету с предварительно кэшированными моделями и `WHISPER_LOCAL_ONLY`.
 - **Автоматическая сборка:** образы автоматически собираются и публикуются через [GitHub Actions](https://github.com/hwdsl2/scribecrate/actions); рабочие процессы сборки доступны публично.
 
-Также доступен в составе [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/README-ru.md), который развёртывает полный AI-стек на собственном сервере одной командой.
+Также доступен в составе [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/docs/README-ru.md), который развёртывает полный AI-стек на собственном сервере одной командой.
 
 > 📘 [The Self-Hosted AI Builder’s Guide](https://books2read.com/aiguide?store=amazon): практическое руководство по созданию, защите и эксплуатации собственного приватного ИИ-стека.
 
 **Также доступно:**
 
 - Попробовать онлайн: [Открыть в Colab](https://selfhostedaistack.com/scribecrate-notebook) — Docker и установка не требуются
-- Связанные AI-сервисы: [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/README-ru.md), [SpeakCrate](https://github.com/hwdsl2/speakcrate/blob/main/README-ru.md), [EmbedCrate](https://github.com/hwdsl2/embedcrate/blob/main/README-ru.md), [GatewayCrate](https://github.com/hwdsl2/gatewaycrate/blob/main/README-ru.md), [InferCrate](https://github.com/hwdsl2/infercrate/blob/main/README-ru.md), [ParseCrate](https://github.com/hwdsl2/parsecrate/blob/main/README-ru.md), [UplinkCrate](https://github.com/hwdsl2/uplinkcrate/blob/main/README-ru.md)
+- Связанные AI-сервисы: [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/docs/README-ru.md), [SpeakCrate](https://github.com/hwdsl2/speakcrate/blob/main/docs/README-ru.md), [EmbedCrate](https://github.com/hwdsl2/embedcrate/blob/main/docs/README-ru.md), [GatewayCrate](https://github.com/hwdsl2/gatewaycrate/blob/main/docs/README-ru.md), [InferCrate](https://github.com/hwdsl2/infercrate/blob/main/docs/README-ru.md), [ParseCrate](https://github.com/hwdsl2/parsecrate/blob/main/docs/README-ru.md), [UplinkCrate](https://github.com/hwdsl2/uplinkcrate/blob/main/docs/README-ru.md)
 
 ## Быстрый старт
 
@@ -107,13 +107,13 @@ curl http://IP_вашего_сервера:9000/v1/audio/transcriptions \
     -F model=whisper-1
 ```
 
-В качестве альтернативы вы можете [настроить Whisper без Docker](https://github.com/hwdsl2/whisper-install/blob/main/README-ru.md). Чтобы узнать больше об использовании этого образа, ознакомьтесь с разделами ниже.
+В качестве альтернативы вы можете [настроить Whisper без Docker](https://github.com/hwdsl2/whisper-install/blob/main/docs/README-ru.md). Чтобы узнать больше об использовании этого образа, ознакомьтесь с разделами ниже.
 
 ## ScribeCrate и ScribeCrate Live: что выбрать
 
 ScribeCrate Live развёртывается как отдельный сервер на базе [WhisperLive](https://github.com/collabora/WhisperLive).
 
-| | **ScribeCrate** | [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/README-ru.md) |
+| | **ScribeCrate** | [ScribeCrate Live](https://github.com/hwdsl2/scribecrate-live/blob/main/docs/README-ru.md) |
 |---|---|---|
 | **Назначение** | Транскрибирование готовых аудиофайлов | Живой микрофон / потоковое аудио в реальном времени |
 | **Протокол** | HTTP REST | WebSocket (потоковый) + HTTP REST |
@@ -132,9 +132,9 @@ ScribeCrate Live развёртывается как отдельный серв
 
 - [Setup IPsec VPN](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/README-ru.md)
 - [IPsec VPN на Docker](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README-ru.md)
-- [WireGuard](https://github.com/hwdsl2/docker-wireguard/blob/main/README-ru.md)
-- [OpenVPN](https://github.com/hwdsl2/docker-openvpn/blob/main/README-ru.md)
-- [Headscale](https://github.com/hwdsl2/docker-headscale/blob/main/README-ru.md)
+- [WireGuard](https://github.com/hwdsl2/docker-wireguard/blob/main/docs/README-ru.md)
+- [OpenVPN](https://github.com/hwdsl2/docker-openvpn/blob/main/docs/README-ru.md)
+- [Headscale](https://github.com/hwdsl2/docker-headscale/blob/main/docs/README-ru.md)
 
 </details>
 
@@ -181,7 +181,7 @@ CPU-образы поддерживают `linux/amd64` и `linux/arm64`. Тег
 
 Все переменные являются необязательными. Новые установки с подключённым томом `/var/lib/whisper` автоматически генерируют Bearer-токен. Существующие установки без ключа остаются открытыми для обратной совместимости.
 
-Этот Docker-образ использует следующие переменные, которые можно объявить в файле `env` (см. [пример](whisper.env.example)):
+Этот Docker-образ использует следующие переменные, которые можно объявить в файле `env` (см. [пример](../whisper.env.example)):
 
 | Переменная | Описание | По умолчанию |
 |---|---|---|
@@ -687,7 +687,7 @@ docker rm -f whisper
 
 ScribeCrate можно использовать как службу распознавания речи в более широком self-hosted AI-стеке.
 
-Готовые полные и облегчённые стеки Docker Compose, примеры ручного запуска через `docker run`, а также примеры голосовых, RAG- и MCP-конвейеров с SpeakCrate, EmbedCrate, GatewayCrate, InferCrate, ParseCrate и UplinkCrate см. в [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/README-ru.md).
+Готовые полные и облегчённые стеки Docker Compose, примеры ручного запуска через `docker run`, а также примеры голосовых, RAG- и MCP-конвейеров с SpeakCrate, EmbedCrate, GatewayCrate, InferCrate, ParseCrate и UplinkCrate см. в [Self-Hosted AI Stack](https://github.com/hwdsl2/self-hosted-ai-stack/blob/main/docs/README-ru.md).
 
 ## Диаризация говорящих
 
