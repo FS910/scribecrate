@@ -195,8 +195,8 @@ CPU 镜像支持 `linux/amd64` 和 `linux/arm64`。`:cuda` 标签仅支持 `linu
 | `WHISPER_LOG_LEVEL` | 日志级别：`DEBUG`、`INFO`、`WARNING`、`ERROR`、`CRITICAL`。 | `INFO` |
 | `WHISPER_BEAM` | 转录和翻译解码的 beam 大小。较大的值可能以速度换取精度。使用 `1` 可获得最快的贪婪解码。 | `5` |
 | `WHISPER_MAX_REQUEST_BEAM` | 每个请求的 `beam` 覆盖值允许的最大 beam 大小。设为 `0` 可禁用此限制。 | `10` |
-| `WHISPER_CONDITION_ON_PREVIOUS_TEXT` | 使用前一窗口的文本作为解码上下文。设为 `false` 可减少重复反馈循环，但可能降低窗口间的一致性。 | `true` |
-| `WHISPER_NO_REPEAT_NGRAM_SIZE` | 限制解码中的重复 token n-gram。`0` 表示禁用；接受 `0` 至 `2147483647` 的规范十进制整数。n-gram 是 token 序列，不一定是单词。 | `0` |
+| `WHISPER_CONDITION_ON_PREVIOUS_TEXT` | 使用前一窗口的文本作为解码上下文。设为 `false` 可能减少重复反馈循环，但也可能降低窗口间的一致性。 | `true` |
+| `WHISPER_NO_REPEAT_NGRAM_SIZE` | 限制解码中的重复 token n-gram。`0` 表示禁用；接受 `0` 至 `2147483647` 的规范十进制整数。n-gram 是模型 token 的序列，不一定对应完整的单词。 | `0` |
 | `WHISPER_MAX_UPLOAD_MB` | 上传音频文件的最大大小（MB）。超过此限制的请求会返回 HTTP 413。设为 `0` 可禁用此限制。 | `1024` |
 | `WHISPER_LOCAL_ONLY` | 设为任意非空值（如 `true`）时，禁止所有 HuggingFace 模型下载。适用于预先缓存模型的离线或隔离网络部署。 | *（未设置）* |
 | `WHISPER_WORD_TIMESTAMPS` | 设为 `true` 时，全局启用词级时间戳。`verbose_json` 输出将包含顶层 `words` 数组，含每个词的起止时间和置信度。也可通过 `timestamp_granularities[]=word` 按请求启用。 | *（未设置）* |
@@ -207,11 +207,15 @@ CPU 镜像支持 `linux/amd64` 和 `linux/arm64`。`:cuda` 标签仅支持 `linu
 
 **注：** 在 `env` 文件中，值可用单引号括起，例如 `VAR='value'`。`=` 两侧不要有空格。如更改 `WHISPER_PORT`，请相应更新 `docker run` 命令中的 `-p` 参数。
 
-重复控制适用于转录和翻译的批处理及 SSE 路径，默认保持既有解码设置。对于容易重复的录音，可尝试 `WHISPER_CONDITION_ON_PREVIOUS_TEXT=false` 和 `WHISPER_NO_REPEAT_NGRAM_SIZE=3`。这可能抑制正常重复或降低上下文一致性，不能保证消除幻觉。
+重复控制适用于转录和翻译的批处理及 SSE 路径。对于容易重复的录音，可尝试 `WHISPER_CONDITION_ON_PREVIOUS_TEXT=false` 和 `WHISPER_NO_REPEAT_NGRAM_SIZE=3`。这可能抑制正常重复或降低解码窗口间的一致性，不能保证消除幻觉。
 
-这两个新选项会去除首尾 ASCII 空白、最多一对匹配的外层引号，然后再次去除首尾空白。空值使用默认值；布尔值仅接受 ASCII 大小写不敏感的 `true`/`false`。整数不接受正负号、前导零或非 ASCII 数字。非空无效值会在模型加载前阻止启动，不改变旧选项的解析方式，也不添加请求参数。
+这些设置的值可包含首尾 ASCII 空白，以及最多一对匹配的外层引号。空值使用默认值。布尔值接受 `true`/`false`，不区分 ASCII 字母大小写；整数必须使用 ASCII 数字，且不能包含正负号或前导零。非空无效值会在模型加载前阻止启动。
 
-须使用包含此功能的镜像。如绑定挂载了修改版 `api_server.py`，请先移除挂载或合并更新，否则它会遮蔽镜像内的新 API。修改绑定挂载的 `/whisper.env` 后重启容器；如文件挂载仍显示旧内容，仅重建该容器。更改 Docker/Compose 容器环境或镜像时，须保留原数据卷及 Compose 项目并重建容器，单纯重启不会应用这些更改。移除选项恢复默认值；旧代码会忽略这些选项。更新或回滚时不要删除模型数据卷。
+绑定挂载的 `api_server.py` 会覆盖镜像内置的 API。移除该挂载可使用内置 API；若需保留自定义版本，请在升级时同步更新。
+
+修改绑定挂载的 `/whisper.env` 后，请重启容器。如果容器仍读取到旧文件内容，请仅重建该容器。更改 Docker/Compose 容器环境变量或镜像时，需要重建容器，并保留原数据卷及 Compose 项目。单纯重启不会应用这些变更。
+
+移除这些选项可恢复默认解码设置。更新或回滚时不要删除模型数据卷。
 
 使用 `env` 文件的示例：
 
@@ -227,7 +231,7 @@ docker run \
     -d hwdsl2/whisper-server
 ```
 
-`env` 文件以绑定挂载方式传入容器，每次重启时自动生效，无需重建容器。
+绑定挂载的 `env` 文件会在容器启动时读取。修改后请重启容器；如果容器仍读取到旧文件内容，请保留原数据卷并重建容器。
 
 <details>
 <summary>也可通过 <code>--env-file</code> 传入</summary>
