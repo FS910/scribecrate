@@ -202,6 +202,7 @@ CPU 映像支援 `linux/amd64` 和 `linux/arm64`。`:cuda` 標籤僅支援 `linu
 | `WHISPER_WORD_TIMESTAMPS` | 設為 `true` 時，全域啟用詞級時間戳。`verbose_json` 輸出將包含頂層 `words` 陣列，含每個詞的起止時間和置信度。也可透過 `timestamp_granularities[]=word` 按請求啟用。 | *（未設定）* |
 | `WHISPER_DIARIZATION` | 設為 `true` 啟用說話人分離，識別每個片段中的說話人。使用 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 和 pyannote segmentation-3.0 ONNX 模型（約 45 MB，首次使用時自動下載）。不支援串流模式。 | *（未設定）* |
 | `WHISPER_DIARIZE_NUM_SPEAKERS` | 說話人確切數量（如已知）。提高聚類準確性。設為 `-1` 或留空表示自動偵測。 | `-1` |
+| `WHISPER_DIARIZE_THREADS` | 分割和嵌入模型各自使用的 CPU 執行緒數。接受 `1` 至 `2147483647` 的標準十進位整數；未設定或為空時繼承 `WHISPER_THREADS`。 | `WHISPER_THREADS` |
 | `WHISPER_DIARIZE_THRESHOLD` | 自動偵測時使用的聚類閾值。值越小偵測到的說話人越多，值越大偵測到的越少。設定確切說話人數量時會忽略此項。 | `0.5` |
 | `WHISPER_DISABLE_USAGE_COUNTS` | 設為 `1` 可停用匿名彙總使用計數。 | *（未設定）* |
 
@@ -756,7 +757,13 @@ docker exec whisper whisper_manage --downloaddiarize
 > 說話人分離需要完整音訊分析，**不支援串流模式**（`stream=true`）。兩者同時啟用時，說話人分離會被靜默跳過。
 
 - 如果已知確切說話人數量，設定 `WHISPER_DIARIZE_NUM_SPEAKERS` 可提高準確性。
-- 說話人分離在轉錄完成後執行，會增加與音訊時長成正比的少量處理時間。
+- 說話人分離在轉錄完成後執行。處理時間取決於音訊時長、硬體和執行緒設定，可能超過轉錄時間。
+
+**說話人分離執行緒：** 分割和嵌入模型現在都繼承 `WHISPER_THREADS`（通常為 `2`），不再各自使用一個執行緒。這會改變現有已啟用說話人分離的部署的 CPU 資源使用情況。設定 `WHISPER_DIARIZE_THREADS=1` 可保留先前的每模型執行緒設定，也可依 CPU 資源預算選擇其他執行緒數。移除此選項或將其留空會恢復繼承行為，而非先前的單執行緒預設值。
+
+與重複控制選項相同，`WHISPER_DIARIZE_THREADS` 的值可包含首尾 ASCII 空白，以及最多一對相符的外層引號。使用 `1` 至 `2147483647` 的 ASCII 十進位數字，不含正負號或前置零。非空無效值會在模型載入前阻止啟動，即使未啟用說話人分離也是如此。僅設定此選項不會啟用說話人分離。
+
+這不是整個行程的執行緒數上限。其他程式庫和請求工作執行緒可能使用額外執行緒，增加執行緒數不能保證加速或輸出完全一致。即使使用 `:cuda` 映像，說話人分離仍在 CPU 上執行，且僅支援批次處理。請依照[環境變數的重新啟動/重建說明](#環境變數)套用變更；更新或回復舊版時保留模型資料卷。
 
 ## 使用計數
 
