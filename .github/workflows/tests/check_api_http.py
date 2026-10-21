@@ -52,6 +52,7 @@ def check(source, baseline=None):
                     "WHISPER_CONDITION_ON_PREVIOUS_TEXT": condition,
                     "WHISPER_NO_REPEAT_NGRAM_SIZE": ngram,
                     "WHISPER_DIARIZATION": "",
+                    "WHISPER_DIARIZE_THREADS": "",
                 }
                 with mock.patch.dict(os.environ, env):
                     with mock.patch.object(api, "_load_model", side_effect=load):
@@ -99,6 +100,7 @@ def check(source, baseline=None):
             with mock.patch.dict(os.environ, {
                 "WHISPER_API_KEY": "", "WHISPER_CONDITION_ON_PREVIOUS_TEXT": "",
                 "WHISPER_NO_REPEAT_NGRAM_SIZE": "", "WHISPER_DIARIZATION": "",
+                "WHISPER_DIARIZE_THREADS": "",
             }):
                 with mock.patch.object(api, "_load_model", side_effect=load):
                     with TestClient(api.app) as client:
@@ -111,6 +113,26 @@ def check(source, baseline=None):
                     except ValueError as error:
                         assert "WHISPER_NO_REPEAT_NGRAM_SIZE" in str(error)
                     load_model.assert_not_called()
+            with mock.patch.dict(os.environ, {
+                "WHISPER_CONDITION_ON_PREVIOUS_TEXT": "", "WHISPER_NO_REPEAT_NGRAM_SIZE": "",
+                "WHISPER_DIARIZATION": "", "WHISPER_DIARIZE_THREADS": "6",
+            }):
+                with mock.patch.object(api, "_load_model", side_effect=load):
+                    with TestClient(api.app):
+                        assert api._diarize_threads == 6 and not api._diarization_enabled
+            for enabled in ("true", "false"):
+                for value in ("0", "2147483648", "yes"):
+                    with mock.patch.dict(os.environ, {
+                        "WHISPER_CONDITION_ON_PREVIOUS_TEXT": "", "WHISPER_NO_REPEAT_NGRAM_SIZE": "",
+                        "WHISPER_DIARIZATION": enabled, "WHISPER_DIARIZE_THREADS": value,
+                    }):
+                        with mock.patch.object(api, "_load_model") as load_model:
+                            try:
+                                with TestClient(api.app):
+                                    raise AssertionError("Invalid diarization thread configuration accepted")
+                            except ValueError as error:
+                                assert "WHISPER_DIARIZE_THREADS" in str(error)
+                            load_model.assert_not_called()
     print("HTTP defaults, overrides, task/transport parity, formats, auth and locks: OK")
 
 

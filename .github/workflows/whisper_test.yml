@@ -7,11 +7,16 @@ permissions:
 
 jobs:
   whisper_test:
-    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    runs-on: ${{ matrix.runner }}
     if: github.repository_owner == 'hwdsl2'
     strategy:
       matrix:
         test_id: [no-env, with-env, with-key, with-diarize, empty-key, existing-no-key]
+        runner: [ubuntu-24.04]
+        include:
+          - test_id: with-diarize
+            runner: ubuntu-24.04-arm
       fail-fast: false
     env:
       TEST_ID: ${{ matrix.test_id }}
@@ -40,11 +45,16 @@ jobs:
 
           if [ "$TEST_ID" = "with-env" ]; then
             # Plain, non-exported assignments must cross run.sh's env bridge.
-            printf '\nWHISPER_CONDITION_ON_PREVIOUS_TEXT=false\nWHISPER_NO_REPEAT_NGRAM_SIZE=3\n' >> whisper.env.example
+            printf '\nWHISPER_CONDITION_ON_PREVIOUS_TEXT=false\nWHISPER_NO_REPEAT_NGRAM_SIZE=3\nWHISPER_DIARIZE_THREADS=6\n' >> whisper.env.example
+          fi
+          if [ "$TEST_ID" = "with-diarize" ]; then
+            # A plain file's empty override must beat container env and inherit
+            # the file's Whisper thread count, without requiring export lines.
+            printf '\nWHISPER_THREADS=2\nWHISPER_DIARIZATION=true\nWHISPER_DIARIZE_THREADS=\n' >> whisper.env.example
           fi
           if [ "$TEST_ID" = "no-env" ]; then
             # Invalid values fail before creating state or downloading models.
-            for assignment in WHISPER_CONDITION_ON_PREVIOUS_TEXT=yes WHISPER_NO_REPEAT_NGRAM_SIZE=2147483648; do
+            for assignment in WHISPER_CONDITION_ON_PREVIOUS_TEXT=yes WHISPER_NO_REPEAT_NGRAM_SIZE=2147483648 WHISPER_DIARIZE_THREADS=0 WHISPER_DIARIZE_THREADS=2147483648; do
               if timeout 30 docker run --name whisper-invalid \
                 -e WHISPER_DISABLE_USAGE_COUNTS=1 -e "$assignment" whisper-test; then
                 echo "Expected invalid configuration to fail"; exit 1
@@ -72,10 +82,13 @@ jobs:
             docker run \
               --name "$TEST_ID" \
               --restart=always \
+              --cpus=2 \
               -e WHISPER_DISABLE_USAGE_COUNTS=1 \
               -v whisper-test-data:/var/lib/whisper \
+              -v ./whisper.env.example:/whisper.env:ro \
               -e WHISPER_MODEL=tiny \
               -e WHISPER_DIARIZATION=true \
+              -e WHISPER_DIARIZE_THREADS=1 \
               -p 9000:9000/tcp \
               -d whisper-test
           elif [ "$TEST_ID" = "with-env" ]; then
@@ -312,32 +325,25 @@ jobs:
             fi
             docker logs "$TEST_ID" 2>&1 | grep -q 'Diarization enabled'
 
-            # Generate longer audio to ensure transcription segments are produced
-            ffmpeg -y -f lavfi \
-              -i "sine=frequency=300:duration=5,volume=0.8" \
-              -ar 16000 -ac 1 /tmp/test_diarize.wav
-
-            # Test verbose_json includes speaker field when segments exist
-            diarize_output=$(curl -sf http://127.0.0.1:9000/v1/audio/transcriptions \
+            # Public two-speaker speech, pinned and checksum-verified. Never
+            # allow VAD-filtered silence to skip the diarization assertions.
+            curl --proto '=https' --proto-redir '=https' -fsSL --retry 2 --max-time 60 \
+              https://raw.githubusercontent.com/Azure-Samples/cognitive-services-speech-sdk/5886c5b7c528bf036508abfd8b4d449ddab0164a/sampledata/audiofiles/katiesteve.wav \
+              -o "$RUNNER_TEMP/whisper-diarization.wav"
+            printf '%s  %s\n' d9ab6bdcd8137223386e8a0ac1d0a723f7ed029310111b9c60ef9ed6cedb4828 \
+              "$RUNNER_TEMP/whisper-diarization.wav" | sha256sum -c -
+            docker cp "$RUNNER_TEMP/whisper-diarization.wav" "$TEST_ID:/tmp/test_diarize.wav"
+            diarize_output=$(curl --max-time 180 -sf http://127.0.0.1:9000/v1/audio/transcriptions \
               "${whisper_curl_args[@]}" \
-              -F file=@/tmp/test_diarize.wav -F model=whisper-1 -F response_format=verbose_json)
-            echo "$diarize_output"
-            # If segments are non-empty, speaker field must be present
-            if echo "$diarize_output" | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('segments') else 1)" 2>/dev/null; then
-              echo "$diarize_output" | grep -q '"speaker"'
-              # Test srt format includes speaker label
-              srt_output=$(curl -sf http://127.0.0.1:9000/v1/audio/transcriptions \
-                "${whisper_curl_args[@]}" \
-                -F file=@/tmp/test_diarize.wav -F model=whisper-1 -F response_format=srt)
-              echo "$srt_output" | grep -q 'SPEAKER_'
-              # Test text format includes speaker label
-              text_output=$(curl -sf http://127.0.0.1:9000/v1/audio/transcriptions \
-                "${whisper_curl_args[@]}" \
-                -F file=@/tmp/test_diarize.wav -F model=whisper-1 -F response_format=text)
-              echo "$text_output" | grep -q 'SPEAKER_'
-            else
-              echo "No segments produced (VAD filtered); skipping speaker label assertions"
-            fi
+              -F "file=@$RUNNER_TEMP/whisper-diarization.wav" -F model=whisper-1 -F response_format=verbose_json)
+            printf '%s' "$diarize_output" | python3 -c \
+              'import sys,json; d=json.load(sys.stdin); assert d["text"].strip() and d["segments"]; assert all(s.get("speaker", "").startswith("SPEAKER_") for s in d["segments"])'
+            docker logs "$TEST_ID" 2>&1 | grep 'Diarization enabled (num_threads=2 per model)' >/dev/null
+            docker cp .github/workflows/tests/check_diarization.py "$TEST_ID:/tmp/check_diarization.py"
+            timeout 900 docker exec "$TEST_ID" python3 /tmp/check_diarization.py \
+              --api /opt/src/api_server.py --audio /tmp/test_diarize.wav \
+              --cache /var/lib/whisper --output /tmp/diarization-results.json
+            docker cp "$TEST_ID:/tmp/diarization-results.json" "$RUNNER_TEMP/diarization-results.json"
 
             # Test whisper_manage --downloaddiarize
             docker exec "$TEST_ID" whisper_manage --downloaddiarize
@@ -385,3 +391,4 @@ jobs:
           docker volume rm whisper-test-data || true
           docker rmi whisper-test || true
           rm -f /tmp/whisper-jfk.flac
+          rm -f "$RUNNER_TEMP/whisper-diarization.wav" "$RUNNER_TEMP/diarization-results.json"

@@ -38,3 +38,48 @@ and output in disposable scratch space; the helper may download the model.
 The helper records resolved inference dependency versions, fixture hashes,
 transcripts and timing. CPU checks do not establish CUDA inference quality, and
 these tests do not prove that any setting eliminates every hallucination.
+
+## Diarization thread checks
+
+`test_diarization_threads.py` covers strict startup validation, inheritance,
+direct-Python legacy fallback, disabled-feature isolation, shell export/parsing
+parity, both native model arguments and the helper's one-thread compatibility
+default. Native constructors, NumPy and model downloads are stubbed only in the
+dependency-free unit suite. No extreme thread-count boundary is allocated.
+
+`check_diarization.py` uses the real installed bindings and the public two-speaker
+fixture below. Supply `--api`, `--audio`, `--cache` and `--output` in disposable
+scratch space. It may download the unchanged Whisper and ONNX models. It checks
+both actual native config arguments, nonempty native diarization turns, speech
+segments/speaker labels, text/SRT/VTT output, and overlapping batch diarization
+with a separate SSE request. SSE must complete without speaker fields. It does
+not change production scheduling or establish new concurrency guarantees.
+
+The helper compares explicit `1`, inherited `2`, and explicit `6`, with a warm-up
+and three timed runs each. It records model hashes, resolved dependency versions,
+CPU architecture/count, RAM, cgroup quota/cpuset/memory constraints when available,
+wall/aggregate CPU time, process-wide peak RSS, turns and clusters. Peak RSS is a
+cumulative process high-water mark, not an isolated allocation measurement for
+each setting. Compare medians/turns; do not require cross-machine byte identity or
+a fixed speedup. Resource settings can oversubscribe a constrained container.
+
+The CPU workflow covers amd64 and arm64 diarization; the CUDA workflow exercises
+the CUDA image's CPU-based diarization on a non-GPU runner. Both run the helper
+with a two-CPU container quota. These are not GPU inference/performance tests.
+Real container jobs must pass before release; local unit/static checks do not
+establish that those jobs ran. Existing main/cron publication paths depend on
+the reusable test workflows, and test-only changes do not trigger publishing.
+The CPU diarization startup also checks plain bind-mounted assignments and
+env-file precedence: an empty file override replaces container value `1` and
+inherits the file's `WHISPER_THREADS=2`. The CUDA startup checks explicit `1`.
+
+### Public diarization fixture
+
+- Source: Azure Samples [sampledata/audiofiles/katiesteve.wav](https://github.com/Azure-Samples/cognitive-services-speech-sdk/blob/5886c5b7c528bf036508abfd8b4d449ddab0164a/sampledata/audiofiles/katiesteve.wav).
+- Immutable revision: `5886c5b7c528bf036508abfd8b4d449ddab0164a`.
+- SHA-256: `d9ab6bdcd8137223386e8a0ac1d0a723f7ed029310111b9c60ef9ed6cedb4828`.
+- License: [MIT, Copyright (c) Microsoft Corporation](https://github.com/Azure-Samples/cognitive-services-speech-sdk/blob/5886c5b7c528bf036508abfd8b4d449ddab0164a/LICENSE.md).
+- Public two-speaker speech, 29.4875 seconds, mono 16 kHz. No private reporter audio
+  or audio binary is committed. Preserve the upstream license/attribution on
+  redistribution. Clustering need not be perfect for the test to pass, but native
+  turns and actual ASR speech segments must be nonempty.
