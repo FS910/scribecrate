@@ -43,7 +43,7 @@ fetch_public_ip() {
   return 1
 }
 
-# Strict parsing is limited to the new decoding options. Keep the existing
+# Strict parsing for the decoding controls. Keep the existing
 # nospaces/noquotes behavior unchanged for all legacy settings.
 normalize_decoding_option() {
   local value="$1" whitespace=$' \t\r\n\v\f'
@@ -79,6 +79,32 @@ configure_decoding_options() {
   export WHISPER_NO_REPEAT_NGRAM_SIZE="$ngram"
 }
 # End strict decoding option helpers.
+
+# Use the same normalization as the decoding settings, without changing legacy
+# WHISPER_THREADS parsing or turning an unused inherited value into an override.
+valid_diarization_threads() {
+  local value="$1" LC_ALL=C
+  # shellcheck disable=SC2071
+  [[ "$value" =~ ^[1-9][0-9]*$ && ${#value} -le 10 ]] \
+    && { [ "${#value}" -lt 10 ] || [[ "$value" < 2147483648 ]]; }
+}
+
+configure_diarization_threads() {
+  local threads enabled LC_ALL=C
+  threads=$(normalize_decoding_option "${WHISPER_DIARIZE_THREADS:-}")
+  if [ -n "$threads" ]; then
+    valid_diarization_threads "$threads" \
+      || exiterr "WHISPER_DIARIZE_THREADS must be an integer from 1 to 2147483647 without signs or leading zeros."
+  else
+    enabled=$(printf '%s' "${WHISPER_DIARIZATION:-}" | LC_ALL=C tr '[:upper:]' '[:lower:]')
+    if [ "$enabled" = true ]; then
+      valid_diarization_threads "$WHISPER_THREADS" \
+        || exiterr "Inherited WHISPER_THREADS must be from 1 to 2147483647 for diarization; set WHISPER_DIARIZE_THREADS explicitly."
+    fi
+  fi
+  export WHISPER_DIARIZE_THREADS="$threads"
+}
+# End strict diarization option helpers.
 
 # Source bind-mounted env file if present (takes precedence over --env-file)
 if [ -f /whisper.env ]; then
@@ -220,6 +246,7 @@ if ! printf '%s' "$WHISPER_DIARIZE_THRESHOLD" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; 
 fi
 
 configure_decoding_options
+configure_diarization_threads
 
 mkdir -p /var/lib/whisper
 # Create the dedicated temp directory for audio uploads.

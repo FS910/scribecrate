@@ -78,9 +78,15 @@ def load(
     cache_dir: str = "/var/lib/whisper",
     num_speakers: int = -1,
     cluster_threshold: float = 0.5,
+    num_threads: int = 1,
 ) -> None:
     """Download ONNX models if needed, initialize the diarization pipeline."""
     global _sd
+
+    # Reject invalid direct calls before downloads or native initialization.
+    # bool is an int subclass, but is not a meaningful thread configuration.
+    if type(num_threads) is not int or not 1 <= num_threads <= 2147483647:
+        raise ValueError("num_threads must be an integer from 1 to 2147483647.")
 
     seg_path, emb_path = _ensure_models(cache_dir)
 
@@ -89,11 +95,14 @@ def load(
 
     config = sherpa_onnx.OfflineSpeakerDiarizationConfig(
         segmentation=sherpa_onnx.OfflineSpeakerSegmentationModelConfig(
+            num_threads=num_threads,
             pyannote=sherpa_onnx.OfflineSpeakerSegmentationPyannoteModelConfig(
                 model=seg_path,
             ),
         ),
-        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(model=emb_path),
+        embedding=sherpa_onnx.SpeakerEmbeddingExtractorConfig(
+            model=emb_path, num_threads=num_threads,
+        ),
         clustering=sherpa_onnx.FastClusteringConfig(
             num_clusters=num_clusters,
             threshold=cluster_threshold,
@@ -109,10 +118,11 @@ def load(
 
     _sd = sherpa_onnx.OfflineSpeakerDiarization(config)
     logger.info(
-        "Diarization pipeline ready (sample_rate=%d, num_clusters=%d, threshold=%.2f)",
+        "Diarization pipeline ready (sample_rate=%d, num_clusters=%d, threshold=%.2f, num_threads=%d per model)",
         _sd.sample_rate,
         num_clusters,
         cluster_threshold,
+        num_threads,
     )
 
 

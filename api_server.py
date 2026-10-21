@@ -51,6 +51,7 @@ _word_timestamps = False  # default for word-level timestamps
 _condition_on_previous_text = True  # preserve faster-whisper's decoding default
 _no_repeat_ngram_size = 0  # 0 disables repeated token n-gram restrictions
 _diarization_enabled = False  # set via WHISPER_DIARIZATION=true
+_diarize_threads = 2  # resolved independently of faster-whisper's thread parser
 _max_upload_bytes = 1024 * 1024 * 1024  # 1 GiB by default; 0 disables the limit
 _UPLOAD_CHUNK_SIZE = 1024 * 1024
 _UNSUPPORTED_DIARIZE_MODEL = "gpt-4o-transcribe-diarize"
@@ -111,16 +112,17 @@ def _load_diarizer() -> None:
             cache_dir=cache_dir,
             num_speakers=num_speakers,
             cluster_threshold=threshold,
+            num_threads=_diarize_threads,
         )
         _diarization_enabled = True
-        logger.info("Diarization enabled.")
+        logger.info("Diarization enabled (num_threads=%d per model).", _diarize_threads)
     except Exception as exc:
         logger.warning("Failed to load diarizer (diarization disabled): %s", exc)
         _diarization_enabled = False
 
 
 def _normalized_env_option(name: str) -> str:
-    """Normalize new decoding options without changing legacy env parsers."""
+    """Normalize strict options without changing legacy env parsers."""
     whitespace = " \t\r\n\v\f"
     value = os.environ.get(name, "").strip(whitespace)
     if len(value) >= 2 and value[0] in ("'", '"') and value[-1] == value[0]:
@@ -156,6 +158,44 @@ def _load_decoding_options() -> None:
         "Decoding options: condition_on_previous_text=%s no_repeat_ngram_size=%d",
         _condition_on_previous_text, _no_repeat_ngram_size,
     )
+
+
+def _load_diarization_options() -> None:
+    """Resolve threads before model loading, outside optional-load error handling."""
+    global _diarize_threads
+
+    value = _normalized_env_option("WHISPER_DIARIZE_THREADS")
+    enabled = os.environ.get("WHISPER_DIARIZATION", "").strip().lower() == "true"
+    if value:
+        if (
+            re.fullmatch(r"[1-9][0-9]*", value) is None
+            or len(value) > 10
+            or (len(value) == 10 and value > "2147483647")
+        ):
+            raise ValueError(
+                "WHISPER_DIARIZE_THREADS must be an integer from 1 to 2147483647 "
+                "without signs or leading zeros."
+            )
+        threads = int(value)
+    else:
+        # Keep direct-Python legacy Whisper parsing intact. Only constrain an
+        # inherited value when the optional native diarizer will actually use it.
+        threads = _env_int("WHISPER_THREADS", 2)
+        if threads <= 0:
+            if enabled:
+                logger.warning(
+                    "Nonpositive WHISPER_THREADS cannot configure diarization; "
+                    "using the legacy diarization setting of 1 thread per model."
+                )
+            threads = 1
+        elif threads > 2147483647:
+            if enabled:
+                raise ValueError(
+                    "Inherited WHISPER_THREADS exceeds 2147483647 for diarization; "
+                    "set WHISPER_DIARIZE_THREADS to an integer from 1 to 2147483647."
+                )
+            threads = 1  # unused; do not narrow an existing Whisper-only setting
+    _diarize_threads = threads
 
 
 def _load_model() -> None:
@@ -208,6 +248,7 @@ def _load_model() -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     _load_decoding_options()
+    _load_diarization_options()
     _load_model()
     _load_diarizer()
     yield
